@@ -16,11 +16,12 @@ export default function RegisterForm(props) {
 
   const register = () => {
     let errors = {};
-    if (!formData.email || !formData.password || !formData.repeatPassword) {
-      if (!formData.email) errors.email = true;
+    const email = formData.email ? formData.email.trim() : '';
+    if (!email || !formData.password || !formData.repeatPassword) {
+      if (!email) errors.email = true;
       if (!formData.password) errors.password = true;
       if (!formData.repeatPassword) errors.repeatPassword = true;
-    } else if (!validateEmail(formData.email)) {
+    } else if (!validateEmail(email)) {
       errors.email = true;
     } else if (formData.password !== formData.repeatPassword) {
       errors.password = true;
@@ -31,7 +32,7 @@ export default function RegisterForm(props) {
     } else {
       firebase
         .auth()
-        .createUserWithEmailAndPassword(formData.email, formData.password)
+        .createUserWithEmailAndPassword(email, formData.password)
         .catch(() => {
           setFormError({
             email: true,

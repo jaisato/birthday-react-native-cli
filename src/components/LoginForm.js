@@ -16,15 +16,19 @@ export default function LoginForm(props) {
 
   const login = () => {
     let errors = {};
-    if (!formData.email || !formData.password) {
-      if (!formData.email) errors.email = true;
-      if (!formData.password) errors.password = true;
-    } else if (!validateEmail(formData.email)) {
+    const email = formData.email ? formData.email.trim() : '';
+    const password = formData.password || '';
+    if (!email || !password) {
+      if (!email) errors.email = true;
+      if (!password) errors.password = true;
+    } else if (!validateEmail(email)) {
       errors.email = true;
+    } else if (password.length < 6) {
+      errors.password = true;
     } else {
       firebase
         .auth()
-        .signInWithEmailAndPassword(formData.email, formData.password)
+        .signInWithEmailAndPassword(email, password)
         .catch(() => {
           setFormError({
             email: true,

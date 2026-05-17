@@ -37,8 +37,14 @@ export default function AddBirthday(props) {
     hideDatePicker();
   };
 
+  const sanitizeInput = (text) => {
+    // Remove potentially dangerous characters and limit length
+    return text.replace(/[<>{}]/g, '').trim().substring(0, 100);
+  };
+
   const onChange = (e, type) => {
-    setFormData({...formData, [type]: e.nativeEvent.text});
+    const sanitized = sanitizeInput(e.nativeEvent.text);
+    setFormData({...formData, [type]: sanitized});
   };
 
   const onSubmit = () => {
@@ -47,6 +53,9 @@ export default function AddBirthday(props) {
       if (!formData.name) errors.name = true;
       if (!formData.lastname) errors.lastname = true;
       if (!formData.dateBirth) errors.dateBirth = true;
+    } else if (formData.name.length < 1 || formData.lastname.length < 1) {
+      if (formData.name.length < 1) errors.name = true;
+      if (formData.lastname.length < 1) errors.lastname = true;
     } else {
       const data = formData;
       data.dateBirth.setYear(0);
