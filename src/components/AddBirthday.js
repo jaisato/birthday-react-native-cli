@@ -38,7 +38,8 @@ export default function AddBirthday(props) {
   };
 
   const onChange = (e, type) => {
-    setFormData({...formData, [type]: e.nativeEvent.text});
+    const value = e.nativeEvent.text ? e.nativeEvent.text.trim() : '';
+    setFormData({...formData, [type]: value});
   };
 
   const onSubmit = () => {
