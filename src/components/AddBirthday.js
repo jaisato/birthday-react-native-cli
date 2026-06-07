@@ -37,9 +37,14 @@ export default function AddBirthday(props) {
     hideDatePicker();
   };
 
+  const sanitizeInput = (text) => {
+    // Remove potentially dangerous characters while allowing unicode letters
+    return text.replace(/[<>{}]/g, '').trim();
+  };
+
   const onChange = (e, type) => {
-    const value = e.nativeEvent.text ? e.nativeEvent.text.trim() : '';
-    setFormData({...formData, [type]: value});
+    const sanitized = sanitizeInput(e.nativeEvent.text || '');
+    setFormData({...formData, [type]: sanitized});
   };
 
   const onSubmit = () => {
