@@ -57,3 +57,6 @@ buck-out/
 
 # CocoaPods
 /ios/Pods/
+
+# Firebase config (real credentials, do not commit)
+src/utils/firebaseConfig.js

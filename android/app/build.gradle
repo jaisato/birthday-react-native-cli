@@ -158,6 +158,9 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://facebook.github.io/react-native/docs/signed-apk-android.
+            // SECURITY WARNING: the release build is currently signed with the shared DEBUG
+            // keystore (publicly known credentials). Anyone could produce APKs with the same
+            // signature. Configure a real, private release keystore before publishing.
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
