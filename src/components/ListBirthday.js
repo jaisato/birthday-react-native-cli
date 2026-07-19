@@ -97,16 +97,16 @@ export default function ListBirthday(props) {
     <View style={styles.container}>
       {showList ? (
         <ScrollView style={styles.scrollView}>
-          {birthday.map((item, index) => (
+          {birthday.map((item) => (
             <Birthday
-              key={index}
+              key={item.id}
               birthday={item}
               daleteBirthday={daleteBirthday}
             />
           ))}
-          {pasatBirthday.map((item, index) => (
+          {pasatBirthday.map((item) => (
             <Birthday
-              key={index}
+              key={item.id}
               birthday={item}
               daleteBirthday={daleteBirthday}
             />
