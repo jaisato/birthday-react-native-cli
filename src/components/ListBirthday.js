@@ -84,7 +84,7 @@ export default function ListBirthday(props) {
               .doc(birthday.id)
               .delete()
               .then(() => {
-                setReloadData();
+                setReloadData(true);
               });
           },
         },
