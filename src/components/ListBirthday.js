@@ -15,15 +15,28 @@ export default function ListBirthday(props) {
   const [showList, setShowList] = useState(true);
   const [birthday, setBirthday] = useState([]);
   const [pasatBirthday, setPasatBirthday] = useState([]);
-  const [reloadData, setReloadData] = useState(false);
+  // A counter rather than a boolean flag. The flag had to be cleared after each
+  // reload, and clearing it was itself a state change the effect depended on:
+  // deleting an entry set it to undefined, the effect ran and fetched, then set
+  // it back to false, which the effect saw as another change and fetched a
+  // second time. Bumping a counter is one change per request to reload.
+  const [reloadData, setReloadData] = useState(0);
 
   useEffect(() => {
+    let current = true;
+
     setBirthday([]);
     setPasatBirthday([]);
     db.collection(user.uid)
       .orderBy('dateBirth', 'asc')
       .get()
       .then((response) => {
+        // A reload that finishes after another has started - or after the
+        // screen is gone - must not write its now-stale rows.
+        if (!current) {
+          return;
+        }
+
         const itemsArray = [];
         response.forEach((doc) => {
           const data = doc.data();
@@ -31,9 +44,28 @@ export default function ListBirthday(props) {
           itemsArray.push(data);
         });
         formatData(itemsArray);
+      })
+      .catch((error) => {
+        // Nothing caught this: offline, or rules denying the read, surfaced as
+        // an unhandled rejection and the list simply stayed empty with no
+        // indication anything had failed.
+        console.error('No se pudieron cargar los cumpleaños', error);
+
+        if (current) {
+          Alert.alert(
+            'Error',
+            'No se han podido cargar los cumpleaños. Revisa tu conexión.',
+          );
+        }
       });
-    setReloadData(false);
+
+    return () => {
+      current = false;
+    };
   }, [reloadData]);
+
+  /** Asks the effect above for a fresh read. */
+  const reload = () => setReloadData((count) => count + 1);
 
   const formatData = (items) => {
     const currentDate = moment().set({
@@ -83,8 +115,10 @@ export default function ListBirthday(props) {
             db.collection(user.uid)
               .doc(birthday.id)
               .delete()
-              .then(() => {
-                setReloadData();
+              .then(reload)
+              .catch((error) => {
+                console.error('No se pudo eliminar el cumpleaños', error);
+                Alert.alert('Error', 'No se ha podido eliminar el cumpleaños.');
               });
           },
         },
@@ -97,16 +131,20 @@ export default function ListBirthday(props) {
     <View style={styles.container}>
       {showList ? (
         <ScrollView style={styles.scrollView}>
-          {birthday.map((item, index) => (
+          {/* Keyed by document id. Both lists are rendered as siblings and both
+              used to key by their own array index, so the first upcoming and
+              the first past birthday were both key 0 - duplicate keys among
+              siblings, which React resolves by reusing the wrong element. */}
+          {birthday.map((item) => (
             <Birthday
-              key={index}
+              key={item.id}
               birthday={item}
               daleteBirthday={daleteBirthday}
             />
           ))}
-          {pasatBirthday.map((item, index) => (
+          {pasatBirthday.map((item) => (
             <Birthday
-              key={index}
+              key={item.id}
               birthday={item}
               daleteBirthday={daleteBirthday}
             />
@@ -116,7 +154,7 @@ export default function ListBirthday(props) {
         <AddBirthday
           user={user}
           setShowList={setShowList}
-          setReloadData={setReloadData}
+          setReloadData={reload}
         />
       )}
       <ActionBar showList={showList} setShowList={setShowList} />
