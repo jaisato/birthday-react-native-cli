@@ -48,8 +48,23 @@ export default function AddBirthday(props) {
       if (!formData.lastname) errors.lastname = true;
       if (!formData.dateBirth) errors.dateBirth = true;
     } else {
-      const data = formData;
-      data.dateBirth.setYear(0);
+      // `const data = formData` was an alias, not a copy, so `setYear` below
+      // mutated the very Date object sitting in React state - and the form
+      // renders that same object through moment(). The year is deliberately
+      // flattened before storing (only the day and month matter for a
+      // birthday), but doing it in place meant that when the write failed, the
+      // re-render triggered by setFormError showed the user's chosen date with
+      // its year silently replaced. Copying the Date keeps the flattening on
+      // the value being sent and leaves the form's own state alone.
+      //
+      // setFullYear(1900) rather than the deprecated setYear(0): setYear maps
+      // 0-99 onto 1900-1999, so setYear(0) already meant 1900. Same stored
+      // value, no migration, and the intent is now readable.
+      const dateBirth = new Date(formData.dateBirth);
+      dateBirth.setFullYear(1900);
+
+      const data = {...formData, dateBirth};
+
       db.collection(user.uid)
         .add(data)
         .then(() => {
