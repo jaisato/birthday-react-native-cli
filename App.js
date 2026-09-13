@@ -15,9 +15,17 @@ export default function App() {
   const [user, setUser] = useState(undefined);
 
   useEffect(() => {
-    firebase.auth().onAuthStateChanged((response) => {
+    // onAuthStateChanged returns its own unsubscribe function, and the effect
+    // has to hand it back or the listener outlives the component. Under Fast
+    // Refresh - which remounts this component on every save - each reload added
+    // another live listener to the same auth instance, so one edit session
+    // ended with a dozen of them all calling setUser on a component only one of
+    // them belongs to.
+    const unsubscribe = firebase.auth().onAuthStateChanged((response) => {
       setUser(response);
     });
+
+    return unsubscribe;
   }, []);
 
   if (user === undefined) return null;

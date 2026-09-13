@@ -29,10 +29,11 @@ export default function AddBirthday(props) {
   };
 
   const handlerConfirm = (date) => {
-    const dateBirth = date;
-    dateBirth.setHours(0);
-    dateBirth.setMinutes(0);
-    dateBirth.setSeconds(0);
+    // A copy, not the picker's own Date: `const dateBirth = date` aliased it,
+    // so the setHours/setMinutes calls below were editing an object the picker
+    // still holds.
+    const dateBirth = new Date(date.getTime());
+    dateBirth.setHours(0, 0, 0, 0);
     setFormData({...formData, dateBirth});
     hideDatePicker();
   };
@@ -48,8 +49,17 @@ export default function AddBirthday(props) {
       if (!formData.lastname) errors.lastname = true;
       if (!formData.dateBirth) errors.dateBirth = true;
     } else {
-      const data = formData;
-      data.dateBirth.setYear(0);
+      // The stored date carries only the day and month - ListBirthday reassigns
+      // the year to the current one before comparing - so the year is flattened
+      // on the way out. It has to be flattened on a copy: `const data =
+      // formData` aliased the state object, and `data.dateBirth.setYear(0)`
+      // then edited the very Date the form is rendering. On a failed write the
+      // component stayed mounted and re-rendered from setFormError below, so
+      // the field the user had filled in with their own date silently changed
+      // to "1 de enero de 1900" - the date was gone and the retry saved 1900.
+      const dateBirth = new Date(formData.dateBirth.getTime());
+      dateBirth.setYear(0);
+      const data = {...formData, dateBirth};
       db.collection(user.uid)
         .add(data)
         .then(() => {
