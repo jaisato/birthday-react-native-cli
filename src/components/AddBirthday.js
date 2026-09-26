@@ -29,10 +29,11 @@ export default function AddBirthday(props) {
   };
 
   const handlerConfirm = (date) => {
-    const dateBirth = date;
-    dateBirth.setHours(0);
-    dateBirth.setMinutes(0);
-    dateBirth.setSeconds(0);
+    // A copy, not the picker's own Date: `const dateBirth = date` aliased it,
+    // so the setHours/setMinutes calls below were editing an object the picker
+    // still holds.
+    const dateBirth = new Date(date.getTime());
+    dateBirth.setHours(0, 0, 0, 0);
     setFormData({...formData, dateBirth});
     hideDatePicker();
   };
@@ -48,23 +49,17 @@ export default function AddBirthday(props) {
       if (!formData.lastname) errors.lastname = true;
       if (!formData.dateBirth) errors.dateBirth = true;
     } else {
-      // `const data = formData` was an alias, not a copy, so `setYear` below
-      // mutated the very Date object sitting in React state - and the form
-      // renders that same object through moment(). The year is deliberately
-      // flattened before storing (only the day and month matter for a
-      // birthday), but doing it in place meant that when the write failed, the
-      // re-render triggered by setFormError showed the user's chosen date with
-      // its year silently replaced. Copying the Date keeps the flattening on
-      // the value being sent and leaves the form's own state alone.
-      //
-      // setFullYear(1900) rather than the deprecated setYear(0): setYear maps
-      // 0-99 onto 1900-1999, so setYear(0) already meant 1900. Same stored
-      // value, no migration, and the intent is now readable.
-      const dateBirth = new Date(formData.dateBirth);
-      dateBirth.setFullYear(1900);
-
+      // The stored date carries only the day and month - ListBirthday reassigns
+      // the year to the current one before comparing - so the year is flattened
+      // on the way out. It has to be flattened on a copy: `const data =
+      // formData` aliased the state object, and `data.dateBirth.setYear(0)`
+      // then edited the very Date the form is rendering. On a failed write the
+      // component stayed mounted and re-rendered from setFormError below, so
+      // the field the user had filled in with their own date silently changed
+      // to "1 de enero de 1900" - the date was gone and the retry saved 1900.
+      const dateBirth = new Date(formData.dateBirth.getTime());
+      dateBirth.setYear(0);
       const data = {...formData, dateBirth};
-
       db.collection(user.uid)
         .add(data)
         .then(() => {
