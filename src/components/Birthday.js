@@ -7,7 +7,7 @@ export default function Birthday(props) {
 
   const infoDay = () => {
     if (birthday.days === 0) {
-      return <Text style={{color: '#fff'}}>Es suy cumpleaños</Text>;
+      return <Text style={{color: '#fff'}}>Es su cumpleaños</Text>;
     } else {
       const days = -birthday.days;
       return (

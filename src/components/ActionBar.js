@@ -9,7 +9,7 @@ export default function ActionBar(props) {
     <View style={styles.viewFooter}>
       <View style={styles.viewClose}>
         <Text style={styles.text} onPress={() => firebase.auth().signOut()}>
-          Cerrar Sessión
+          Cerrar sesión
         </Text>
       </View>
       <View style={styles.viewAdd}>

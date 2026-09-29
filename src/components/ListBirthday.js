@@ -27,8 +27,10 @@ export default function ListBirthday(props) {
 
     setBirthday([]);
     setPasatBirthday([]);
+    // Ordered here in formatData, not by the query: entries saved before the
+    // leap-year fix carry the year 1900 and newer ones 2000, so ordering by the
+    // stored timestamp would list all the old ones first.
     db.collection(user.uid)
-      .orderBy('dateBirth', 'asc')
       .get()
       .then((response) => {
         // A reload that finishes after another has started - or after the
@@ -62,7 +64,7 @@ export default function ListBirthday(props) {
     return () => {
       current = false;
     };
-  }, [reloadData]);
+  }, [reloadData, user.uid]);
 
   /** Asks the effect above for a fresh read. */
   const reload = () => setReloadData((count) => count + 1);
@@ -95,6 +97,14 @@ export default function ListBirthday(props) {
         pasatBirthdayTempArray.push(itemTemp);
       }
     });
+
+    // Same order the Firestore query used to give (by day of the year), which
+    // is also the most useful one: the next birthday first, and past ones
+    // from the earliest in the year. For both lists that is `days`
+    // descending.
+    const byDay = (a, b) => b.days - a.days;
+    birthdayTempArray.sort(byDay);
+    pasatBirthdayTempArray.sort(byDay);
 
     setBirthday(birthdayTempArray);
     setPasatBirthday(pasatBirthdayTempArray);

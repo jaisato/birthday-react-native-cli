@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   StyleSheet,
   Text,
@@ -19,6 +19,11 @@ export default function AddBirthday(props) {
   const [formData, setFormData] = useState({});
   const [isDatePicketVisible, setIsDatePicketVisible] = useState(false);
   const [formError, setFormError] = useState({});
+  // Set while a write is in flight. Nothing stopped a second tap on "Crear
+  // cumpleaños" before the first add() resolved, and each tap stored its own
+  // document - the same birthday listed twice. A ref, because it has to be
+  // seen by a tap delivered before the next render.
+  const saving = useRef(false);
 
   const hideDatePicker = () => {
     setIsDatePicketVisible(false);
@@ -43,6 +48,10 @@ export default function AddBirthday(props) {
   };
 
   const onSubmit = () => {
+    if (saving.current) {
+      return;
+    }
+
     let errors = {};
     if (!formData.name || !formData.lastname || !formData.dateBirth) {
       if (!formData.name) errors.name = true;
@@ -57,9 +66,16 @@ export default function AddBirthday(props) {
       // component stayed mounted and re-rendered from setFormError below, so
       // the field the user had filled in with their own date silently changed
       // to "1 de enero de 1900" - the date was gone and the retry saved 1900.
+      //
+      // The year it is flattened to has to be a leap year. It used to be
+      // setYear(0), i.e. 1900, which is not one: 29 February rolled over to
+      // 1 March 1900, so anyone born on 29 February was stored - and then
+      // listed every year - as born on 1 March. 2000 keeps every day of the
+      // year; ListBirthday no longer relies on the stored year for ordering.
       const dateBirth = new Date(formData.dateBirth.getTime());
-      dateBirth.setYear(0);
+      dateBirth.setFullYear(2000);
       const data = {...formData, dateBirth};
+      saving.current = true;
       db.collection(user.uid)
         .add(data)
         .then(() => {
@@ -67,6 +83,7 @@ export default function AddBirthday(props) {
           setShowList(true);
         })
         .catch(() => {
+          saving.current = false;
           setFormError({name: true, lastname: true, dateBirth: true});
         });
     }
